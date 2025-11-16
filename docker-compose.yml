@@ -1,0 +1,124 @@
+version: '3.8'
+
+services:
+  # MongoDB Service
+  mongodb:
+    image: mongo:7.0
+    container_name: email-clarity-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: email-clarity
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - email-clarity-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/email-clarity --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Elasticsearch Service
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.10
+    container_name: email-clarity-elasticsearch
+    restart: unless-stopped
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - email-clarity-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Backend Service
+  backend:
+    build:
+      context: ./email-clarity-backend
+      dockerfile: Dockerfile
+    container_name: email-clarity-backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      # Server Configuration
+      PORT: 3001
+      NODE_ENV: production
+      
+      # MongoDB Configuration (using service name)
+      MONGODB_URI: mongodb://mongodb:27017/email-clarity
+      
+      # Elasticsearch Configuration (using service name)
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      
+      # IMAP Account 1 (set these in .env or override in docker-compose.override.yml)
+      IMAP1_HOST: ${IMAP1_HOST:-imap.gmail.com}
+      IMAP1_PORT: ${IMAP1_PORT:-993}
+      IMAP1_USER: ${IMAP1_USER}
+      IMAP1_PASSWORD: ${IMAP1_PASSWORD}
+      IMAP1_SECURE: ${IMAP1_SECURE:-true}
+      
+      # IMAP Account 2 (optional)
+      IMAP2_HOST: ${IMAP2_HOST:-imap.gmail.com}
+      IMAP2_PORT: ${IMAP2_PORT:-993}
+      IMAP2_USER: ${IMAP2_USER}
+      IMAP2_PASSWORD: ${IMAP2_PASSWORD}
+      IMAP2_SECURE: ${IMAP2_SECURE:-true}
+      
+      # Gemini API Key (required for auto-reply)
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      
+      # Webhook URLs (optional)
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
+      INTERESTED_WEBHOOK_URL: ${INTERESTED_WEBHOOK_URL:-}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - email-clarity-network
+    volumes:
+      # Mount .env file if you prefer file-based configuration
+      # - ./email-clarity-backend/.env:/app/.env:ro
+      - backend_logs:/app/logs
+
+  # Frontend Service
+  frontend:
+    build:
+      context: ./email-clarity-ui
+      dockerfile: Dockerfile
+    container_name: email-clarity-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - email-clarity-network
+
+volumes:
+  mongodb_data:
+    driver: local
+  elasticsearch_data:
+    driver: local
+  backend_logs:
+    driver: local
+
+networks:
+  email-clarity-network:
+    driver: bridge
+

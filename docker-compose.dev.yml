@@ -1,0 +1,32 @@
+# Development docker-compose override
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+version: '3.8'
+
+services:
+  backend:
+    build:
+      target: builder
+    command: npm run dev
+    volumes:
+      # Mount source code for hot-reload
+      - ./email-clarity-backend/src:/app/src
+      - ./email-clarity-backend/.env:/app/.env
+    environment:
+      NODE_ENV: development
+
+  frontend:
+    build:
+      context: ./email-clarity-ui
+      dockerfile: Dockerfile.dev
+    volumes:
+      # Mount source code for hot-reload
+      - ./email-clarity-ui/src:/app/src
+      - ./email-clarity-ui/public:/app/public
+      - ./email-clarity-ui/index.html:/app/index.html
+    ports:
+      - "5173:5173"
+    environment:
+      NODE_ENV: development
+      VITE_API_BASE: http://localhost:3001
+

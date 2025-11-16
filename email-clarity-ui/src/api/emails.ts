@@ -1,4 +1,4 @@
-import { API_BASE } from "@/config/api";
+import { API_BASE_URL } from "@/config/api";
 
 export interface Email {
   id: string;
@@ -39,7 +39,7 @@ export async function fetchAllEmails(filters?: {
     if (filters?.limit) params.append("limit", filters.limit.toString());
     if (filters?.skip) params.append("skip", filters.skip.toString());
 
-    const url = `${API_BASE}/api/emails${params.toString() ? `?${params.toString()}` : ""}`;
+    const url = `${API_BASE_URL}/emails${params.toString() ? `?${params.toString()}` : ""}`;
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -52,7 +52,7 @@ export async function fetchAllEmails(filters?: {
   } catch (error) {
     console.error("Error fetching emails:", error);
     if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new Error("Cannot connect to backend API. Make sure the server is running on http://localhost:4000");
+      throw new Error("Cannot connect to backend API. Make sure the server is running.");
     }
     throw error;
   }
@@ -66,7 +66,7 @@ export async function fetchEmailById(id: string, accountId?: string): Promise<Em
     const params = new URLSearchParams();
     if (accountId) params.append("accountId", accountId);
 
-    const url = `${API_BASE}/api/emails/${id}${params.toString() ? `?${params.toString()}` : ""}`;
+    const url = `${API_BASE_URL}/emails/${id}${params.toString() ? `?${params.toString()}` : ""}`;
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -104,7 +104,7 @@ export async function searchEmails(
       params.append("accountId", accountId);
     }
 
-    const url = `${API_BASE}/api/emails/search?${params.toString()}`;
+    const url = `${API_BASE_URL}/emails/search?${params.toString()}`;
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -117,7 +117,7 @@ export async function searchEmails(
   } catch (error) {
     console.error("Error searching emails:", error);
     if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new Error("Cannot connect to backend API. Make sure the server is running on http://localhost:4000");
+      throw new Error("Cannot connect to backend API. Make sure the server is running.");
     }
     throw error;
   }
@@ -135,7 +135,7 @@ export async function fetchEmailsByCategory(
     params.append("category", category);
     if (accountId) params.append("accountId", accountId);
 
-    const url = `${API_BASE}/api/emails?${params.toString()}`;
+    const url = `${API_BASE_URL}/emails?${params.toString()}`;
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -148,7 +148,7 @@ export async function fetchEmailsByCategory(
   } catch (error) {
     console.error("Error fetching emails by category:", error);
     if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new Error("Cannot connect to backend API. Make sure the server is running on http://localhost:4000");
+      throw new Error("Cannot connect to backend API. Make sure the server is running.");
     }
     throw error;
   }
@@ -162,7 +162,7 @@ export async function fetchStats(accountId?: string): Promise<EmailStats> {
     const params = new URLSearchParams();
     if (accountId) params.append("accountId", accountId);
 
-    const url = `${API_BASE}/api/emails/stats/summary${params.toString() ? `?${params.toString()}` : ""}`;
+    const url = `${API_BASE_URL}/emails/stats/summary${params.toString() ? `?${params.toString()}` : ""}`;
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -174,7 +174,7 @@ export async function fetchStats(accountId?: string): Promise<EmailStats> {
   } catch (error) {
     console.error("Error fetching stats:", error);
     if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new Error("Cannot connect to backend API. Make sure the server is running on http://localhost:4000");
+      throw new Error("Cannot connect to backend API. Make sure the server is running.");
     }
     throw error;
   }
